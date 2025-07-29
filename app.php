@@ -37,6 +37,11 @@ while (!$fim)
     echo "Listar todas as receitas -> 2\n";
     echo "Atualizar receitas existentes -> 3\n";
     echo "Apagar receita -> 4\n";
+    echo "Criar um nova categoria -> 5\n";
+    echo "Listar todas as categorias -> 6\n";
+    echo "Associar uma receita a uma categoria -> 7\n";
+    echo "Desassociar uma receita a uma categoria -> 8\n";
+    echo "Consultar receitas filtradas por categoria -> 9\n";
     echo "Sair do programa -> 0\n";
 
     //Seleção do menu.
@@ -67,6 +72,31 @@ while (!$fim)
         case 4:
             limparterminal();
             apagarreceita($con);
+            break;
+
+        case 5:
+            limparterminal();
+            criarcategoria($con);
+            break;
+
+        case 6:
+            limparterminal();
+            listarcategoria($con, true);
+            break;
+
+        case 7:
+            limparterminal();
+            associarreceitacategoria($con, true);
+            break;
+
+        case 8:
+            limparterminal();
+            desassociarreceitacategoria($con, true);
+            break;
+
+        case 9:
+            limparterminal();
+            receitafiltradacategoria($con, true);
             break;
 
         default:
@@ -157,7 +187,8 @@ function listarreceitas($con, $voltarMenu){
         echo " | ingredientes: " . implode(", ", $ingredientes) . "\n";
     }
 
-    if ($voltarMenu){
+    if ($voltarMenu)
+    {
         voltarMenu();
     }
 }
@@ -165,7 +196,8 @@ function listarreceitas($con, $voltarMenu){
 function voltarMenu(){
     $input = "";
     echo "Selecione 0 Para voltar: ";
-    while ($input != "0") {
+    while ($input != "0") 
+    {
         $input = readline("");
     }
 }
@@ -210,15 +242,22 @@ function atualizarreceitas($con, $voltarMenu)
     {
         echo "\nA receita foi atualizada.";
     }
+
+
     else
     {   
         echo "Não foi possivel atualizar a receita.\n";
     }
 
-    if ($voltarMenu) voltarMenu();
+    if ($voltarMenu)
+    {
+        voltarMenu();
+    }
 }
 
 // ----------------------------------------------------------------------------------------------------------
+
+
 
 
 //=================================================
@@ -266,10 +305,295 @@ function apagarreceita($con)
 
 }
 
+
+
+// ----------------------------------------------------------------------------------------------------------
+
+
+
+
+//=================================================
+//               Criar Categoria
+//================================================= 
+
+
+
+function criarcategoria($con)
+{
+    $nome = readline("Nome da categoria: ");
+
+    // Criar comando SQL
+    $sql = "INSERT INTO categoria (tipo_categoria) VALUES ('$nome')";
+
+    //Executar o comando SQL
+    if (mysqli_query($con, $sql)) {
+        echo "Categoria inserida com sucesso\n\n\n"; 
+    } 
+
+    else 
+    {
+        echo "Erro ao inserir nova categoria\n\n\n";
+    }
+
+    if ($voltarMenu) 
+    {
+        voltarMenu();
+    }
+}
+
+
+
+
+// ----------------------------------------------------------------------------------------------------------
+
+
+
+
+
+//=================================================
+//               Listar Categoria
+//================================================= 
+
+
+
+function listarcategoria($con, $voltarMenu)
+
+{
+    $sql = "SELECT id_categoria, tipo_categoria FROM categoria ORDER BY id_categoria";
+
+
+    $resultado = mysqli_query($con, $sql);
+
+    echo "\n--- Lista de Categorias ---\n";
+
+    while ($linha = mysqli_fetch_assoc($resultado)) 
+
+    {
+        echo "ID: " . $linha["id_categoria"] . " | Nome: " . $linha["tipo_categoria"] . "\n"; 
+    }
+
+
+    if ($voltarMenu) 
+    {
+        voltarMenu();
+    }
+
+}
+
+
+
+
+// ----------------------------------------------------------------------------------------------------------
+
+
+
+//=================================================
+//        Associar Receita a Categoria
+//=================================================
+
+
+function associarreceitacategoria($con)
+{
+    echo "\nAssociar uma receita a uma categoria \n";
+
+    // Mostrar as receitas
+    $sql_receitas = "SELECT id_receita, nome FROM receita ORDER BY id_receita";
+    $res_receitas = mysqli_query($con, $sql_receitas);
+
+    echo "\n--- Receitas Disponíveis ---\n";
+    while ($linha = mysqli_fetch_assoc($res_receitas)) 
+    {
+        echo "ID: " . $linha["id_receita"] . " | Nome: " . $linha["nome"] . "\n";
+    }
+
+    // Mostra as categorias
+    $sql_categorias = "SELECT id_categoria, tipo_categoria FROM categoria ORDER BY id_categoria";
+    $res_categorias = mysqli_query($con, $sql_categorias);
+
+    echo "\n Categorias : \n";
+    while ($linha = mysqli_fetch_assoc($res_categorias)) 
+    {
+        echo "ID: " . $linha["id_categoria"] . " | Tipo: " . $linha["tipo_categoria"] . "\n";
+    }
+
+    // pede ids
+    $id_receita = readline("\nID da receita que quer associar: ");
+    $id_categoria = readline("ID da categoria que quer associar: ");
+
+    // Verificar se o ID da receita existe
+    $verificareceita = mysqli_query($con, "SELECT id_receita FROM receita WHERE id_receita = $id_receita");
+    if (mysqli_num_rows($verificareceita) == 0) 
+    {
+        echo "\nErro: Receita com ID $id_receita não existe.\n";
+        voltarMenu();
+        return;
+    }
+
+    // Verificar se o id da categoria existe
+    $verificacategoria = mysqli_query($con, "SELECT id_categoria FROM categoria WHERE id_categoria = $id_categoria");
+    if (mysqli_num_rows($verificacategoria) == 0) 
+    {
+        echo "\nErro: Categoria com ID $id_categoria não existe.\n";
+        voltarMenu();
+        return;
+    }
+
+    // Verifica e associa
+    $sql = "INSERT INTO receita_categoria (id_receita, id_categoria) VALUES ($id_receita, $id_categoria)";
+
+    if (mysqli_query($con, $sql)) 
+    {
+        echo "\nReceita associada com sucesso\n";
+    } 
+    
+    else 
+    {
+        echo "\nErro ao associar receita a categoria.\n";
+    }
+
+    voltarMenu();
+}
+
+
+
+// ----------------------------------------------------------------------------------------------------------
+
+
+
+//=================================================
+//     Desassociar Receita de Categoria 
+//=================================================
+
+
+function desassociarReceitaCategoria($con)
+{
+    echo "\nDesassociar Receita de Categoria : \n";
+
+    
+    $sql = "
+    SELECT receita_categoria.id_receita_categoria, 
+    receita.nome AS nome_receita, 
+    categoria.tipo_categoria AS nome_categoria
+    FROM receita_categoria
+    JOIN receita ON receita_categoria.id_receita = receita.id_receita
+    JOIN categoria ON receita_categoria.id_categoria = categoria.id_categoria
+    ORDER BY receita_categoria.id_receita_categoria
+    ";
+
+    $res = mysqli_query($con, $sql);
+
+    if (mysqli_num_rows($res) == 0) {
+        echo "Não existem associações feitas.\n";
+        voltarMenu();
+        return;
+    }
+
+    echo "\nAssociações :\n";
+    while ($linha = mysqli_fetch_assoc($res)) 
+    {
+        echo "ID Associação: " . $linha["id_receita_categoria"] . 
+             " | Receita: " . $linha["nome_receita"] . 
+             " | Categoria: " . $linha["nome_categoria"] . "\n";
+    }
+
+    // Escolher a associação a remover
+    $id_associacao = readline("\nInsere o ID da associação que queres desassociar: ");
+
+    // Verificar se existe
+    $verifica = mysqli_query($con, "SELECT * FROM receita_categoria WHERE id_receita_categoria = $id_associacao");
+
+    if (mysqli_num_rows($verifica) == 0) 
+    {
+        echo "Id da associação invalido.\n";
+        voltarMenu();
+        return;
+    }
+
+    // Remover receita da categoria
+    $sql_delete = "DELETE FROM receita_categoria WHERE id_receita_categoria = $id_associacao";
+
+    if (mysqli_query($con, $sql_delete)) 
+    {
+        echo "Desassociação terminada com sucesso.\n";
+    } 
+
+    else 
+    {
+        echo "Erro ao desassociar categoria.\n";
+    }
+
+    voltarMenu();
+}
+
+
+
+
+
+// ----------------------------------------------------------------------------------------------------------
+
+
+
+//=================================================
+//       Filtrar receita por categoria
+//=================================================
+
+
+function receitafiltradacategoria($con)
+{
+    echo "\nCategorias Disponíveis : \n";
+
+    // Mostra categorias
+    $sql_categorias = "SELECT id_categoria, tipo_categoria FROM categoria ORDER BY id_categoria";
+    $res_categorias = mysqli_query($con, $sql_categorias);
+
+    while ($linha = mysqli_fetch_assoc($res_categorias)) {
+        echo "ID: " . $linha["id_categoria"] . " | Nome: " . $linha["tipo_categoria"] . "\n";
+    }
+
+    // Pede o id 
+    $id_categoria = readline("\nInsere o ID da categoria que queres consultar: ");
+
+    // Vê se a categoria esta registada
+    $verifica = mysqli_query($con, "SELECT * FROM categoria WHERE id_categoria = $id_categoria");
+    if (mysqli_num_rows($verifica) == 0) {
+        echo "Essa categoria não existe.\n";
+        voltarMenu();
+        return;
+    }
+
+    $sql = "
+    SELECT r.id_receita, r.nome, r.preparacao, r.tempo_estimado, r.num_doses
+    FROM receita_categoria rc
+    JOIN receita r ON rc.id_receita = r.id_receita
+    WHERE rc.id_categoria = $id_categoria
+    ORDER BY r.id_receita
+    ";
+
+    $resultado = mysqli_query($con, $sql);
+
+    echo "\nReceitas associadas : \n";
+
+    if (mysqli_num_rows($resultado) == 0) 
+    {
+        echo "Para esta categoria não existe nenhuma receita associada\n";
+    } 
+
+    else 
+    {
+        while ($linha = mysqli_fetch_assoc($resultado)) 
+        {
+            echo "ID: " . $linha["id_receita"] . " | Nome: " . $linha["nome"] ." | Tempo: " . $linha["tempo_estimado"] . " min 
+            | Doses: " . $linha["num_doses"] ."\nPreparação: " . $linha["preparacao"] . "\n\n";
+        }
+    }
+
+    voltarMenu();
+}
+
+
+
 // fechar conexão.
 mysqli_close($con);  
 
-// A FAZER --> tenho que criar a function de associar os ingredientes as receitas. 
-// A FAZER --> preciso de acrescentar ao criar receita a funcionalidade de inserir novos ingredientes 
-//             (uso outra function e chamo-a ao criarreceitas) --> (ou faço a parte (?) )
+
              
